@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import HTTPException, APIRouter
 from starlette.requests import Request
 from app.publishers.publisher import Publisher
@@ -21,34 +23,53 @@ async def get_all_assistants(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
-@dev_router.get("/assistant/get_one")
-async def get_one_assistant(request: Request):
+# Фиктивные базы данных
+assistant_db = {
+    1: {"id": 1, "name": "Assistant One", "role": "Helper"},
+    2: {"id": 2, "name": "Assistant Two", "role": "Supporter"}
+}
+
+transcribed_text_db = {
+    1: {"id": 1, "text": "This is a transcribed text."},
+    2: {"id": 2, "text": "Another transcribed text."}
+}
+
+summary_text_db = {
+    1: {"id": 1, "summary": "This is a summary of the text."},
+    2: {"id": 2, "summary": "This is another summary."}
+}
+
+@dev_router.get("/assistant/get_one/{id}")
+async def get_one_assistant(id: int = Path(..., description="The ID of the assistant to retrieve")):
     try:
-        # Фиктивные данные
-        assistant = {"id": 1, "name": "Assistant One", "role": "Helper"}
-        return assistant
+        if id in assistant_db:
+            return assistant_db[id]
+        else:
+            raise HTTPException(status_code=404, detail="Assistant not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
-@dev_router.get("/result/get_transcribed_text")
-async def get_transcribed_text(request: Request):
+@dev_router.get("/result/get_transcribed_text/{id}")
+async def get_transcribed_text(id: int = Path(..., description="The ID of the transcribed text to retrieve")):
     try:
-        # Фиктивные данные
-        transcribed_text = {"id": 1, "text": "This is a transcribed text."}
-        await publisher.publish_result({"status": "summary_ready", "id": 1}, "summary_queue")
-        return transcribed_text
+        if id in transcribed_text_db:
+            result = transcribed_text_db[id]
+            await publisher.publish_result({"status": "summary_ready", "id": result["id"]}, "summary_queue")
+            return result
+        else:
+            raise HTTPException(status_code=404, detail="Transcribed text not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
-@dev_router.get("/result/get_summary_text")
-async def get_summary_text(request: Request):
+@dev_router.get("/result/get_summary_text/{id}")
+async def get_summary_text(id: int = Path(..., description="The ID of the summary text to retrieve")):
     try:
-        # Фиктивные данные
-        summary_text = {"id": 1, "summary": "This is a summary of the text."}
-        return summary_text
+        if id in summary_text_db:
+            return summary_text_db[id]
+        else:
+            raise HTTPException(status_code=404, detail="Summary text not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
 @dev_router.post("/start/youtube")
 async def start_youtube(request: Request):
     try:
